@@ -8,7 +8,7 @@
 #include "include/raylib.h"
 
 #define ARRAY_LEN(xs) sizeof(xs)/sizeof(xs[0])
-#define N 512
+#define N (1<<10)
 
 float in[N];
 float complex out[N];
@@ -94,12 +94,32 @@ int main(void){
 		BeginDrawing();
 		ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
 		
-		float cell_width = (float)render_width/N;
 
-		for (size_t i=0; i<N; ++i) {
-			float t = amp(out[i]);
-			DrawRectangle(i*cell_width, render_height/2 - (render_height/2)*t, cell_width, (render_height/2)*t, RED);
+		float max_amp = 0.0f;
+		for(size_t i = 0; i < N; i++) {
+			float a = amp(out[i]);
+			if (max_amp < a) max_amp = a;
+		}
 
+		float step = 1.06;
+		size_t m = 0;
+		for(float f = 20.0f; (size_t) f < N; f *= step) {
+			m += 1;
+		}
+
+		float cell_width = (float)render_width/m;
+		
+		m = 0;
+		for (float f = 20.0f; (size_t) f < N; f *= step) {
+			float f1 = f*step;
+			float a = 0.0f;
+			for(size_t q = (size_t) f; q < N && q < (size_t)f1; q++) {
+				a += amp(out[q]);
+			}
+			a /= (size_t) f1 - (size_t) f + 1;
+			float t = a / max_amp;
+			DrawRectangle(m*cell_width, render_height/2 - (render_height/2)*t, cell_width, (render_height/2)*t, RED);
+			m += 1;
 		}
 		
 
