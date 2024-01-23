@@ -65,11 +65,25 @@ void callback(void *bufferData, unsigned int frames) {
 	fft(in, 1, out, N);	
 }
 
+float interpolate_to_range(float x, float min_range, float max_range, float new_max) {
+    // Ensure x is within the original range
+    x = (x < min_range) ? min_range : ((x > max_range) ? max_range : x);
+
+    // Interpolate to the new range
+    float interpolated_value = (x - min_range) / (max_range - min_range) * new_max;
+
+    return interpolated_value;
+}
 
 void DrawHistoricalGraph(int numOfBins, Entry history[][numOfBins]) {
-	Color color = ColorAlpha(RED, 0.3f);
 	for(int i = 0; i < MAX_ENTRIES; i++) {
+		float maxY = 0.0f;
+		for(int k = 0; k < numOfBins; k++) {
+			if ((900 - history[i][k].currY) > maxY) maxY = 900 - history[i][k].currY;
+		}
 		for(int j = 0; j < numOfBins; j++) {
+			float opacity = 0.3f - interpolate_to_range(900 - history[i][j].currY, 0.0f, maxY, 0.3f);
+			Color color = ColorAlpha(RED, opacity);
 			DrawLine(history[i][j].prevX + i, history[i][j].prevY - i, history[i][j].currX + i, history[i][j].currY - i, color);
 		}
 	}
@@ -79,7 +93,8 @@ void DrawHistoricalGraph(int numOfBins, Entry history[][numOfBins]) {
 int main(void){
 	int width = 1000;
 	int height = 1000;
-
+	
+	// 1.04 for more than words
 	float step = 1.06;
 	size_t numOfFrequencyBins = 0;
 	for(float f = 20.0f; (size_t) f < N; f *= step) {
@@ -97,7 +112,7 @@ int main(void){
 	float cell_width = (float) render_width / numOfFrequencyBins;
 
 	InitAudioDevice();
-	Music music = LoadMusicStream("Ollie_Seasons.mp3");
+	Music music = LoadMusicStream("ktr.mp3");
 	
 	printf("music.frameCount = %u\n", music.frameCount);
 	printf("music.stream.sampleRate = %u\n", music.stream.sampleRate);
@@ -142,17 +157,18 @@ int main(void){
 		for (float currFreq = 20.0f; (size_t) currFreq < N; currFreq *= step) {
 			float nextFrequency = currFreq * step;
 			float sumOfAmplitudes = 0.0f;
-
+			
 			for(size_t q = (size_t) currFreq; q < N && q < (size_t) nextFrequency; q++) {
-				sumOfAmplitudes += amp(out[q]);
+				float a = amp(out[q]);
+				sumOfAmplitudes += a;
 			}
 
 			float avgAmplitudeOfFreqBin = sumOfAmplitudes / ((size_t) nextFrequency - (size_t) currFreq + 1);
 			float interpolatedAmplitude = avgAmplitudeOfFreqBin / max_amp;
 
 			float currX = currFrequencyBin * cell_width;
-			float currY = (render_height - 100) - (render_height/2)*interpolatedAmplitude;
-			DrawRectangle(currX, currY, cell_width, (render_height/2)*interpolatedAmplitude, RED);
+			float currY = (render_height - 100) - (render_height/3)*interpolatedAmplitude;
+			DrawRectangle(currX, currY, cell_width, (render_height/3)*interpolatedAmplitude, RED);
 			DrawLine(prevX, prevY, currX, currY, GREEN);
 			
 			history[0][currFrequencyBin].prevX = prevX;
