@@ -78,11 +78,16 @@ float interpolate_to_range(float x, float min_range, float max_range, float new_
 void DrawHistoricalGraph(int numOfBins, Entry history[][numOfBins]) {
 	for(int i = 0; i < MAX_ENTRIES; i++) {
 		float maxY = 0.0f;
+
 		for(int k = 0; k < numOfBins; k++) {
 			if ((900 - history[i][k].currY) > maxY) maxY = 900 - history[i][k].currY;
 		}
+
 		for(int j = 0; j < numOfBins; j++) {
 			float opacity = 0.3f - interpolate_to_range(900 - history[i][j].currY, 0.0f, maxY, 0.3f);
+			if(i % 100 < 5 && i > 5) {
+				opacity = 0.5f;
+			}
 			Color color = ColorAlpha(RED, opacity);
 			DrawLine(history[i][j].prevX + i, history[i][j].prevY - i, history[i][j].currX + i, history[i][j].currY - i, color);
 		}
@@ -112,7 +117,7 @@ int main(void){
 	float cell_width = (float) render_width / numOfFrequencyBins;
 
 	InitAudioDevice();
-	Music music = LoadMusicStream("ktr.mp3");
+	Music music = LoadMusicStream("more_than_words.mp3");
 	
 	printf("music.frameCount = %u\n", music.frameCount);
 	printf("music.stream.sampleRate = %u\n", music.stream.sampleRate);
@@ -124,6 +129,7 @@ int main(void){
 	
 	AttachAudioStreamProcessor(music.stream, callback);
 	size_t iter = 0;
+
 	while (!WindowShouldClose()) {
 		UpdateMusicStream(music);
 
@@ -150,25 +156,25 @@ int main(void){
 			if (max_amp < a) max_amp = a;
 		}
 			
-		int currFrequencyBin = 0;
+		long int currFrequencyBin = 0;
 		int prevX = 0;
 		int prevY = render_height - 100;
-		
+
 		for (float currFreq = 20.0f; (size_t) currFreq < N; currFreq *= step) {
-			float nextFrequency = currFreq * step;
+			size_t nextFrequency = currFreq * step;
 			float sumOfAmplitudes = 0.0f;
 			
 			for(size_t q = (size_t) currFreq; q < N && q < (size_t) nextFrequency; q++) {
 				float a = amp(out[q]);
-				sumOfAmplitudes += a;
+				sumOfAmplitudes += (size_t) a;
 			}
 
-			float avgAmplitudeOfFreqBin = sumOfAmplitudes / ((size_t) nextFrequency - (size_t) currFreq + 1);
+			size_t avgAmplitudeOfFreqBin = sumOfAmplitudes / ((size_t) nextFrequency - (size_t) currFreq + 1);
 			float interpolatedAmplitude = avgAmplitudeOfFreqBin / max_amp;
 
-			float currX = currFrequencyBin * cell_width;
-			float currY = (render_height - 100) - (render_height/3)*interpolatedAmplitude;
-			DrawRectangle(currX, currY, cell_width, (render_height/3)*interpolatedAmplitude, RED);
+			int currX = currFrequencyBin * cell_width;
+			int currY = (render_height - 100) - (render_height/3)*interpolatedAmplitude;
+			//DrawRectangle(currX, currY, cell_width, (render_height/3)*interpolatedAmplitude, RED);
 			DrawLine(prevX, prevY, currX, currY, GREEN);
 			
 			history[0][currFrequencyBin].prevX = prevX;
@@ -183,7 +189,7 @@ int main(void){
 
 		DrawHistoricalGraph(numOfFrequencyBins, history);
 		iter += 1;
-		
+
 
 		EndDrawing();
 	}
