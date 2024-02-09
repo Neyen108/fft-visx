@@ -76,7 +76,7 @@ float interpolate_to_range(float x, float min_range, float max_range, float new_
 }
 
 void DrawHistoricalGraph(int numOfBins, Entry history[][numOfBins]) {
-	for(int i = 0; i < MAX_ENTRIES; i++) {
+	for(int i = 0; i < MAX_ENTRIES - 1; i++) {
 		float maxY = 0.0f;
 
 		for(int k = 0; k < numOfBins; k++) {
@@ -89,7 +89,10 @@ void DrawHistoricalGraph(int numOfBins, Entry history[][numOfBins]) {
 				opacity = 0.5f;
 			}
 			Color color = ColorAlpha(RED, opacity);
-			DrawLine(history[i][j].prevX + i, history[i][j].prevY - i, history[i][j].currX + i, history[i][j].currY - i, color);
+			DrawLine(history[i][j].currX + i, history[i][j].currY - i, history[i+1][j].currX + i+1, history[i+1][j].currY - (i+1), color);
+			if(i % 100 == 0) {
+				DrawLine(history[i][j].prevX + i, history[i][j].prevY - i, history[i][j].currX + i+1, history[i][j].currY - (i+1), color);
+			}
 		}
 	}
 }
@@ -173,7 +176,7 @@ int main(void){
 			float interpolatedAmplitude = avgAmplitudeOfFreqBin / max_amp;
 
 			int currX = currFrequencyBin * cell_width;
-			int currY = (render_height - 100) - (render_height/3)*interpolatedAmplitude;
+			int currY = (render_height - 100) - (render_height/2)*interpolatedAmplitude;
 			//DrawRectangle(currX, currY, cell_width, (render_height/3)*interpolatedAmplitude, RED);
 			DrawLine(prevX, prevY, currX, currY, GREEN);
 			
